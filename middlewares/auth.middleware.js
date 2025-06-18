@@ -1,0 +1,37 @@
+const { verifyToken } = require('../config/jwt');
+const User = require("../models/user.model");
+
+const authMiddleware = async (req, res, next) => {
+    const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+        return res.status(401).json({
+            message: "Authentication failed! No token provided."
+        })
+    };
+    console.log("🎟️ JWT_Token: ", token);
+
+    try {
+        const decoded = verifyToken(token);
+        if (!decoded) {
+            return res.status(401).json({
+                message: "Authentication failed! Invalid decoded token."
+            })
+        }
+
+        const user = await User.findById(decoded.userId);
+        if (!user) {
+            return res.status(401).json({
+                message: "Authentication failed! User not found."
+            })
+        }
+
+        req.user = user;
+        next();
+
+    } catch (err) {
+        res.status(400).json({ message: 'Invalid token' });
+    }
+};
+
+module.exports = authMiddleware;

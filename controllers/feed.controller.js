@@ -1,0 +1,630 @@
+const User = require("../models/user.model");
+const Feed = require("../models/feed.model");
+
+const formidable = require("formidable");
+const cloudinary = require("../config/cloudinary");
+const { post } = require("../routers/admin.router");
+
+
+// Create New Feed
+// exports.createFeed = async (req, res) => {
+
+//     try {
+//         const form = new formidable.Formidable({
+//             multiples: false,
+//             keepExtensions: true,
+//             maxFileSize: 200 * 1024 * 1024, // 200MB Limit
+//         });
+
+//         form.parse(req, async (err, fields, files) => {
+//             if (err) {
+//                 return res.status(400).json({
+//                     message: "Error in Form Parse !",
+//                     error: err.message,
+//                 });
+//             }
+
+//             const feed = new Feed();
+
+//             const text = Array.isArray(fields.text)
+//                 ? fields.text.join(" ")
+//                 : fields.text?.toString();
+
+//             if (!text) {
+//                 return res.status(400).json({ message: "Text is required!" });
+//             }
+
+//             feed.text = text;
+
+//             const mediaFile = files.media;
+//             const mediaPath =
+//                 mediaFile?.filepath ||
+//                 (Array.isArray(mediaFile) ? mediaFile[0]?.filepath : null);
+
+//             if (!mediaFile) {
+//                 return res
+//                     .status(400)
+//                     .json({ message: "No media file found in request" });
+//             }
+
+//             if (!mediaPath) {
+//                 return res.status(400).json({ message: "Media file has no filepath" });
+//             }
+
+
+//             let uploadedFeed;
+//             if (mediaPath) {
+//                 uploadedFeed = await cloudinary.uploader.upload(mediaPath, {
+//                     folder: "SaturnX_Management_System/Feeds",
+//                     // timeout: 600000, // 10 minutes
+//                 });
+
+//                 if (!uploadedFeed) {
+//                     return res
+//                         .status(400)
+//                         .json({
+//                             message: "Error while Uploading Feed!"
+//                         });
+//                 }
+
+//                 feed.media = uploadedFeed.secure_url;
+//                 feed.public_id = uploadedFeed.public_id;
+
+//             }
+
+//             if (!req.user || !req.user._id) {
+//                 return res
+//                     .status(401)
+//                     .json({ message: "Unauthorized: User not found" });
+//             }
+//             feed.author = req.user._id;
+
+//             const newFeed = await feed.save();
+//             await User.findByIdAndUpdate(
+//                 req.user._id,
+//                 { $push: { feeds: newFeed._id } },
+//                 { new: true }
+//             );
+
+//             res.status(201).json({
+//                 message: "Feed Created Successfully!",
+//                 newFeed,
+//             });
+//         });
+
+//     } catch (error) {
+//         console.error("Error in createFeed:", error);
+//         res.status(500).json({
+//             message: "Error in Create Feed !",
+//             error: error.message,
+//         });
+//     }
+// };
+
+// exports.createFeed = async (req, res) => {
+//     const form = new formidable.IncomingForm({
+//       multiples: false,
+//       keepExtensions: true,
+//       maxFileSize: 200 * 1024 * 1024,
+//     });
+
+//     try {
+//       form.parse(req, async (err, fields, files) => {
+//         try {
+//           if (err) {
+//             console.error('Form parse error:', err);
+//             return res.status(400).json({
+//               message: "Error parsing form data",
+//               error: err.message,
+//             });
+//           }
+
+//           // Validate required fields
+//           if (!fields.title || !fields.content) {
+//             return res.status(400).json({
+//               message: "Title and content are required",
+//             });
+//           }
+
+//           const feed = new Feed({
+//             title: fields.title,
+//             content: fields.content,
+//             author: req.user._id
+//           });
+
+//           // Handle media upload
+//           if (files.media) {
+//             const uploadedFeed = await cloudinary.uploader.upload(files.media.filepath, {
+//               folder: "SaturnX_Management_System/Feeds",
+//             }).catch(cloudinaryError => {
+//               throw new Error(`Cloudinary upload failed: ${cloudinaryError.message}`);
+//             });
+
+//             feed.media = {
+//               url: uploadedFeed.secure_url,
+//               public_id: uploadedFeed.public_id,
+//               type: files.media.mimetype
+//             };
+//           }
+
+//           const savedFeed = await feed.save();
+//           const populatedFeed = await Feed.findById(savedFeed._id)
+//             .populate('author', 'name email')
+//             .exec();
+
+//           res.status(201).json({
+//             message: "Feed Created Successfully!",
+//             post: populatedFeed
+//           });
+
+//         } catch (parseError) {
+//           console.error('Error in form processing:', parseError);
+//           res.status(500).json({
+//             message: "Error processing form data",
+//             error: parseError.message
+//           });
+//         }
+//       });
+//     } catch (outerError) {
+//       console.error('Outer error:', outerError);
+//       res.status(500).json({
+//         message: "Server error",
+//         error: outerError.message
+//       });
+//     }
+//   };
+
+exports.createFeed = async (req, res) => {
+    const form = new formidable.IncomingForm({
+        multiples: false,
+        keepExtensions: true,
+        maxFileSize: 200 * 1024 * 1024,
+    });
+
+    try {
+        form.parse(req, async (err, fields, files) => {
+            try {
+                if (err) throw new Error(`Form parse error: ${err.message}`);
+
+                // Convert array fields to strings if needed
+                const title = Array.isArray(fields.title) ? fields.title[0] : fields.title;
+                const content = Array.isArray(fields.content) ? fields.content[0] : fields.content;
+
+                // Validate required fields
+                if (!title || !content) {
+                    throw new Error('Title and content are required');
+                }
+
+                const feed = new Feed({
+                    title: String(title), // Ensure string type
+                    content: String(content), // Ensure string type
+                    author: req.user._id
+                });
+
+                // Handle media upload
+                if (files.media && files.media.filepath) {
+                    const uploaded = await cloudinary.uploader.upload(files.media.filepath, {
+                        folder: "SaturnX_Management_System/Feeds",
+                        resource_type: "auto"
+                    });
+
+                    feed.media = {
+                        url: uploaded.secure_url,
+                        public_id: uploaded.public_id,
+                        type: files.media.mimetype
+                    };
+                }
+
+                const savedFeed = await feed.save();
+                res.status(201).json({
+                    message: "Feed created successfully",
+                    post: savedFeed
+                });
+
+                console.log('Received fields:', {
+                    title: typeof fields.title,
+                    content: typeof fields.content,
+                    isTitleArray: Array.isArray(fields.title),
+                    isContentArray: Array.isArray(fields.content)
+                });
+                
+            } catch (parseError) {
+                console.error('Processing error:', parseError);
+                res.status(400).json({
+                    message: parseError.message || 'Error processing request',
+                    error: parseError.message
+                });
+            }
+        });
+    } catch (outerError) {
+        console.error('Server error:', outerError);
+        res.status(500).json({
+            message: 'Internal server error',
+            error: outerError.message
+        });
+    }
+};
+
+// Get All Feeds
+exports.getAllFeeds = async (req, res) => {
+    try {
+        const feeds = await Feed.find()
+            .populate("author", "-password -secretKey -tokens")
+            .sort({ createdAt: -1 });
+
+        if (!feeds) {
+            return res.status(404).json({ message: "Feeds not found !" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "All Feeds Fetched Successfully !",
+            data: feeds,
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error in Getting All Feeds !",
+            error: error.message,
+        });
+    }
+};
+
+// Update Feed
+exports.updateFeed = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const form = new formidable.Formidable({
+            multiples: false,
+            keepExtensions: true,
+            maxFileSize: 200 * 1024 * 1024, // 200MB Limit
+        });
+
+        form.parse(req, async (err, fields, files) => {
+            if (err) {
+                return res.status(400).json({
+                    message: "Error in Form Parse!",
+                    error: err.message,
+                });
+            }
+
+            const feed = await Feed.findById(id);
+            if (!feed) {
+                return res.status(404).json({ message: "Feed not found!" });
+            }
+
+            if (!req.user || !req.user._id || feed.author.toString() !== req.user._id.toString()) {
+                return res.status(401).json({ message: "Unauthorized: You cannot update this feed" });
+            }
+
+            const text = Array.isArray(fields.text) ? fields.text.join(" ") : fields.text?.toString();
+            if (text) feed.text = text;
+
+            const mediaFile = files.media;
+            const mediaPath = mediaFile?.filepath || (Array.isArray(mediaFile) ? mediaFile[0]?.filepath : null);
+
+            if (mediaPath) {
+                if (feed.public_id) {
+                    await cloudinary.uploader.destroy(feed.public_id);
+                }
+
+                const uploadedFeed = await cloudinary.uploader.upload(mediaPath, {
+                    folder: "SaturnX_Management_System/Feeds",
+                });
+
+                if (!uploadedFeed) {
+                    return res.status(400).json({ message: "Error while Uploading Feed!" });
+                }
+
+                feed.media = uploadedFeed.secure_url;
+                feed.public_id = uploadedFeed.public_id;
+            }
+
+            const updatedFeed = await feed.save();
+
+            res.status(200).json({
+                success: true,
+                message: "Feed Updated Successfully!",
+                updatedFeed,
+            });
+        });
+    } catch (error) {
+        console.error("Error in updateFeed:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error in Update Feed!",
+            error: error.message,
+        });
+    }
+};
+
+// Delete Feed
+exports.deleteFeed = async (req, res) => {
+    try {
+        const { id: feedId } = req.params;
+
+        // Find the Feed by ID
+        const feed = await Feed.findById(feedId);
+        if (!feed) {
+            return res.status(404).json({
+                message: "Feed not found"
+            });
+        }
+
+        // Delete Feed from Cloudinary
+        if (feed.media) {
+            const feedPublicId = feed.public_id;
+            await cloudinary.uploader.destroy(feedPublicId);
+        }
+
+        // Remove the feed from database
+        await Feed.findByIdAndDelete(feedId);
+
+        await User.findByIdAndUpdate(feed.author._id, {
+            $pull: { feeds: feedId }
+        });
+
+
+        return res.status(200).json({
+            success: true,
+            message: "Feed deleted successfully",
+            data: feed
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error in Delete Feed !",
+            error: error.message
+        });
+    }
+};
+
+
+// Get Feed by user ID
+exports.getFeedByUserId = async (req, res) => {
+    try {
+        const { id: userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({
+                message: "User ID is required !"
+            });
+        }
+
+        const feeds = await Feed.find({ author: userId })
+            .populate("author", "-password -secretKey -tokens")
+            .sort({ createdAt: -1 });
+
+        if (!feeds) {
+            return res.status(404).json({ message: "Feeds not found !" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "All Feeds Fetched Successfully !",
+            data: feeds,
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error in Getting All Feeds !",
+            error: error.message,
+        });
+    }
+};
+
+// Like-Unlike Feed
+exports.likeUnlikeFeed = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({
+                message: "Feed ID is required !"
+            });
+        }
+
+        const feed = await Feed.findById(id);
+        if (!feed) {
+            return res.status(404).json({
+                message: "Feed not found !"
+            });
+        }
+
+        if (feed.likes.includes(req.user._id)) {
+            await Feed.findByIdAndUpdate(
+                id,
+                { $pull: { likes: req.user._id } },
+                { new: true }
+            );
+            return res.status(200).json({
+                success: true,
+                message: "Feed Unliked Successfully !"
+            });
+        } else {
+            await Feed.findByIdAndUpdate(
+                id,
+                { $push: { likes: req.user._id } },
+                { new: true }
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: "Feed Liked Successfully !"
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error in Like/Unlike Feed !",
+            error: error.message
+
+        });
+    }
+};
+
+// AddComment on Feed
+exports.addCommentOnFeed = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { text } = req.body;
+
+        if (!id) {
+            return res.status(400).json({
+                message: "Feed ID is required !"
+            });
+        }
+
+        if (!text) {
+            return res.status(400).json({
+                message: "Comment Text is required !"
+            });
+        }
+
+        const feed = await Feed.findById(id);
+        if (!feed) {
+            return res.status(404).json({
+                message: "Feed not found !"
+            });
+        }
+
+        const newComment = {
+            user: req.user._id,
+            text
+        };
+        await Feed.findByIdAndUpdate(
+            id,
+            { $push: { comments: newComment } },
+            { new: true }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Comment Added Successfully !",
+            post: feed._id,
+            data: newComment
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error in Adding Comment on Feed !",
+            error: error.message
+        });
+
+    }
+}
+
+// DeleteComment on Feed
+exports.deleteCommentOnFeed = async (req, res) => {
+    try {
+        const { feedId, commentId } = req.params;
+
+        if (!feedId) {
+            return res.status(400).json({
+                message: "Feed ID is required !"
+            });
+        }
+
+        if (!commentId) {
+            return res.status(400).json({
+                message: "Comment ID is required !"
+            });
+        }
+
+        const feed = await Feed.findById(feedId);
+        if (!feed) {
+            return res.status(404).json({
+                message: "Feed not found !"
+            });
+        }
+
+        const deletedFeed = await Feed.findByIdAndUpdate(
+            feedId,
+            { $pull: { comments: { _id: commentId } } },
+            { new: true }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Comment Deleted Successfully !",
+            data: deletedFeed.comments
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error in Deleting Comment on Feed !",
+            error: error.message
+        });
+    }
+}
+
+//UpdateComment on Feed
+// exports.updateCommentOnFeed = async (req, res) => {
+//     try {
+//         const { feedId, commentId } = req.params;
+//         const { text } = req.body;
+
+//         if (!feedId) {
+//             return res.status(400).json({
+//                 message: "Feed ID is required !"
+//             });
+//         }
+
+//         if (!commentId) {
+//             return res.status(400).json({
+//                 message: "Comment ID is required !"
+//             });
+//         }
+
+//         if (!text) {
+//             return res.status(400).json({
+//                 message: "Comment Text is required !"
+//             });
+//         }
+
+//         const feed = await Feed.findById(feedId);
+//         if (!feed) {
+//             return res.status(404).json({
+//                 message: "Feed not found !"
+//             });
+//         }
+
+//         const updatedFeed = await Feed.findByIdAndUpdate(
+//             feedId,
+//             { $set: { comments: { _id: commentId, text: text } } }
+//         );
+
+//         // const updatedFeed = await Feed.findByIdAndUpdate(
+//         //     feedId,
+//         //     { $pull: { comments: { _id: commentId, text: text } } }
+//         // );
+
+//         // if (!updatedFeed) {
+//         //     return res.status(404).json({
+//         //         message: "Comment not found !"
+//         //     });
+//         // }
+//         // await Feed.findByIdAndUpdate(
+//         //     feedId,
+//         //     { $push: { comments: { user: req.user._id, text } } },
+//         //     { new: true }
+//         // )
+
+//         return res.status(200).json({
+//             success: true,
+//             message: "Comment Updated Successfully !",
+//             data: updatedFeed.comments
+//         });
+
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: "Error in Updating Comment on Feed !",
+//             error: error.message
+//         });
+//     }
+// };
