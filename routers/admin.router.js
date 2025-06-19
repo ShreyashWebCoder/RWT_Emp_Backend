@@ -37,6 +37,7 @@ const {
     deleteCommentOnFeed,
     updateCommentOnFeed,
 } = require("../controllers/feed.controller");
+const upload = require("../middlewares/upload");
 
 const router = express.Router();
 
@@ -51,7 +52,7 @@ router.delete("/users/:id", deleteUser);
 router.get("/users/userDetails/:id", userDetails);
 
 // Update User Profile
-router.put("/users/profile/:id",fileValidation, updateProfile);
+router.put("/users/profile/:id", upload.single("media"), fileValidation, updateProfile);
 
 // Attendance Management
 router.get("/all_attendance", getAllAttendance);
@@ -63,8 +64,8 @@ router.delete("/attendance/:id", deleteAttendance);
 // Feed Management
 router.get("/feeds", getAllFeeds);
 router.get("/feed/:id", getFeedByUserId);
-router.post("/feed",fileValidation, createFeed);
-router.put("/feed/update/:id",fileValidation, updateFeed);
+router.post("/feed", upload.single("media"), fileValidation, createFeed);
+router.put("/feed/update/:id", fileValidation, updateFeed);
 router.delete("/feed/:id", deleteFeed);
 // ----------------------
 router.put("/feed/:id", likeUnlikeFeed);

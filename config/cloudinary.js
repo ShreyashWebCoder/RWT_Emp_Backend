@@ -11,9 +11,9 @@ cloudinary.config({
 
 console.log('🤩 Cloudinary config:',
     {
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'missing',
+        cloud_name: process.env.CLOUD_NAME ? 'set' : 'missing',
 
-        api_key: process.env.CLOUDINARY_API_KEY ? 'set' : 'missing'
+        api_key: process.env.CLOUD_API_KEY ? 'set' : 'missing'
     }
 );
 

@@ -20,10 +20,14 @@ const feedSchema = new mongoose.Schema(
             type: String,
         },
         media: {
-            url: String,
-            public_id: String,
-            type: String,
+            type: {
+                url: String,
+                public_id: String,
+                type: String
+            },
+
         },
+
         likes: [
             {
                 type: mongoose.Schema.Types.ObjectId,

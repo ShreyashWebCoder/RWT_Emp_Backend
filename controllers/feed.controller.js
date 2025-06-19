@@ -8,239 +8,118 @@ const { post } = require("../routers/admin.router");
 
 // Create New Feed
 // exports.createFeed = async (req, res) => {
+//     const form = new formidable.IncomingForm({
+//         multiples: false,
+//         keepExtensions: true,
+//         maxFileSize: 200 * 1024 * 1024,
+//     });
 
 //     try {
-//         const form = new formidable.Formidable({
-//             multiples: false,
-//             keepExtensions: true,
-//             maxFileSize: 200 * 1024 * 1024, // 200MB Limit
-//         });
-
 //         form.parse(req, async (err, fields, files) => {
-//             if (err) {
-//                 return res.status(400).json({
-//                     message: "Error in Form Parse !",
-//                     error: err.message,
-//                 });
-//             }
+//             try {
+//                 if (err) throw new Error(`Form parse error: ${err.message}`);
 
-//             const feed = new Feed();
+//                 // Convert array fields to strings if needed
+//                 const title = Array.isArray(fields.title) ? fields.title[0] : fields.title;
+//                 const content = Array.isArray(fields.content) ? fields.content[0] : fields.content;
 
-//             const text = Array.isArray(fields.text)
-//                 ? fields.text.join(" ")
-//                 : fields.text?.toString();
-
-//             if (!text) {
-//                 return res.status(400).json({ message: "Text is required!" });
-//             }
-
-//             feed.text = text;
-
-//             const mediaFile = files.media;
-//             const mediaPath =
-//                 mediaFile?.filepath ||
-//                 (Array.isArray(mediaFile) ? mediaFile[0]?.filepath : null);
-
-//             if (!mediaFile) {
-//                 return res
-//                     .status(400)
-//                     .json({ message: "No media file found in request" });
-//             }
-
-//             if (!mediaPath) {
-//                 return res.status(400).json({ message: "Media file has no filepath" });
-//             }
-
-
-//             let uploadedFeed;
-//             if (mediaPath) {
-//                 uploadedFeed = await cloudinary.uploader.upload(mediaPath, {
-//                     folder: "SaturnX_Management_System/Feeds",
-//                     // timeout: 600000, // 10 minutes
-//                 });
-
-//                 if (!uploadedFeed) {
-//                     return res
-//                         .status(400)
-//                         .json({
-//                             message: "Error while Uploading Feed!"
-//                         });
+//                 // Validate required fields
+//                 if (!title || !content) {
+//                     throw new Error('Title and content are required');
 //                 }
 
-//                 feed.media = uploadedFeed.secure_url;
-//                 feed.public_id = uploadedFeed.public_id;
+//                 const feed = new Feed({
+//                     title: String(title), // Ensure string type
+//                     content: String(content), // Ensure string type
+//                     author: req.user._id
+//                 });
 
+//                 // Handle media upload
+//                 if (files.media && files.media.filepath) {
+//                     const uploaded = await cloudinary.uploader.upload(files.media.filepath, {
+//                         folder: "SaturnX_Management_System/Feeds",
+//                         resource_type: "auto"
+//                     });
+
+//                     feed.media = {
+//                         url: uploaded.secure_url,
+//                         public_id: uploaded.public_id,
+//                         type: files.media.mimetype
+//                     };
+//                 }
+
+//                 const savedFeed = await feed.save();
+//                 res.status(201).json({
+//                     message: "Feed created successfully",
+//                     post: savedFeed
+//                 });
+
+//                 console.log('Received fields:', {
+//                     title: typeof fields.title,
+//                     content: typeof fields.content,
+//                     media: files.media ?  files.media : 'none',
+//                     isTitleArray: Array.isArray(fields.title),
+//                     isContentArray: Array.isArray(fields.content)
+//                 });
+
+//             } catch (parseError) {
+//                 console.error('Processing error:', parseError);
+//                 res.status(400).json({
+//                     message: parseError.message || 'Error processing request',
+//                     error: parseError.message
+//                 });
 //             }
-
-//             if (!req.user || !req.user._id) {
-//                 return res
-//                     .status(401)
-//                     .json({ message: "Unauthorized: User not found" });
-//             }
-//             feed.author = req.user._id;
-
-//             const newFeed = await feed.save();
-//             await User.findByIdAndUpdate(
-//                 req.user._id,
-//                 { $push: { feeds: newFeed._id } },
-//                 { new: true }
-//             );
-
-//             res.status(201).json({
-//                 message: "Feed Created Successfully!",
-//                 newFeed,
-//             });
 //         });
-
-//     } catch (error) {
-//         console.error("Error in createFeed:", error);
+//     } catch (outerError) {
+//         console.error('Server error:', outerError);
 //         res.status(500).json({
-//             message: "Error in Create Feed !",
-//             error: error.message,
+//             message: 'Internal server error',
+//             error: outerError.message
 //         });
 //     }
 // };
 
-// exports.createFeed = async (req, res) => {
-//     const form = new formidable.IncomingForm({
-//       multiples: false,
-//       keepExtensions: true,
-//       maxFileSize: 200 * 1024 * 1024,
-//     });
-
-//     try {
-//       form.parse(req, async (err, fields, files) => {
-//         try {
-//           if (err) {
-//             console.error('Form parse error:', err);
-//             return res.status(400).json({
-//               message: "Error parsing form data",
-//               error: err.message,
-//             });
-//           }
-
-//           // Validate required fields
-//           if (!fields.title || !fields.content) {
-//             return res.status(400).json({
-//               message: "Title and content are required",
-//             });
-//           }
-
-//           const feed = new Feed({
-//             title: fields.title,
-//             content: fields.content,
-//             author: req.user._id
-//           });
-
-//           // Handle media upload
-//           if (files.media) {
-//             const uploadedFeed = await cloudinary.uploader.upload(files.media.filepath, {
-//               folder: "SaturnX_Management_System/Feeds",
-//             }).catch(cloudinaryError => {
-//               throw new Error(`Cloudinary upload failed: ${cloudinaryError.message}`);
-//             });
-
-//             feed.media = {
-//               url: uploadedFeed.secure_url,
-//               public_id: uploadedFeed.public_id,
-//               type: files.media.mimetype
-//             };
-//           }
-
-//           const savedFeed = await feed.save();
-//           const populatedFeed = await Feed.findById(savedFeed._id)
-//             .populate('author', 'name email')
-//             .exec();
-
-//           res.status(201).json({
-//             message: "Feed Created Successfully!",
-//             post: populatedFeed
-//           });
-
-//         } catch (parseError) {
-//           console.error('Error in form processing:', parseError);
-//           res.status(500).json({
-//             message: "Error processing form data",
-//             error: parseError.message
-//           });
-//         }
-//       });
-//     } catch (outerError) {
-//       console.error('Outer error:', outerError);
-//       res.status(500).json({
-//         message: "Server error",
-//         error: outerError.message
-//       });
-//     }
-//   };
-
 exports.createFeed = async (req, res) => {
-    const form = new formidable.IncomingForm({
-        multiples: false,
-        keepExtensions: true,
-        maxFileSize: 200 * 1024 * 1024,
-    });
-
     try {
-        form.parse(req, async (err, fields, files) => {
-            try {
-                if (err) throw new Error(`Form parse error: ${err.message}`);
+        const { title, content } = req.body;
 
-                // Convert array fields to strings if needed
-                const title = Array.isArray(fields.title) ? fields.title[0] : fields.title;
-                const content = Array.isArray(fields.content) ? fields.content[0] : fields.content;
+        // Validate required fields
+        if (!title || !content) {
+            return res.status(400).json({ message: "Title and content are required" });
+        }
 
-                // Validate required fields
-                if (!title || !content) {
-                    throw new Error('Title and content are required');
-                }
-
-                const feed = new Feed({
-                    title: String(title), // Ensure string type
-                    content: String(content), // Ensure string type
-                    author: req.user._id
-                });
-
-                // Handle media upload
-                if (files.media && files.media.filepath) {
-                    const uploaded = await cloudinary.uploader.upload(files.media.filepath, {
-                        folder: "SaturnX_Management_System/Feeds",
-                        resource_type: "auto"
-                    });
-
-                    feed.media = {
-                        url: uploaded.secure_url,
-                        public_id: uploaded.public_id,
-                        type: files.media.mimetype
-                    };
-                }
-
-                const savedFeed = await feed.save();
-                res.status(201).json({
-                    message: "Feed created successfully",
-                    post: savedFeed
-                });
-
-                console.log('Received fields:', {
-                    title: typeof fields.title,
-                    content: typeof fields.content,
-                    isTitleArray: Array.isArray(fields.title),
-                    isContentArray: Array.isArray(fields.content)
-                });
-                
-            } catch (parseError) {
-                console.error('Processing error:', parseError);
-                res.status(400).json({
-                    message: parseError.message || 'Error processing request',
-                    error: parseError.message
-                });
-            }
+        // Initialize feed object
+        const feed = new Feed({
+            title: String(title),
+            content: String(content),
+            author: req.user._id,
         });
-    } catch (outerError) {
-        console.error('Server error:', outerError);
+
+        // Handle image upload (if present)
+        if (req.file) {
+            const uploaded = await cloudinary.uploader.upload(req.file.path, {
+                folder: "SaturnX_Management_System/Feeds",
+                resource_type: "auto"
+            });
+
+            feed.media = {
+                url: uploaded.secure_url,
+                public_id: uploaded.public_id,
+                type: req.file.mimetype,
+            };
+        }
+
+        const savedFeed = await feed.save();
+        res.status(201).json({
+            message: "Feed created successfully",
+            post: savedFeed,
+        });
+
+    } catch (error) {
+        console.error("Error creating feed:", error);
         res.status(500).json({
-            message: 'Internal server error',
-            error: outerError.message
+            message: "Internal server error",
+            error: error.message,
         });
     }
 };
