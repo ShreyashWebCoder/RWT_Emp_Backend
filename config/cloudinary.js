@@ -17,6 +17,5 @@ console.log('🤩 Cloudinary config:',
     }
 );
 
-
 module.exports = cloudinary;
 

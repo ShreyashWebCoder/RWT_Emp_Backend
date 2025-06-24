@@ -12,13 +12,7 @@ const {
     updateProfile,
 } = require("../controllers/user.controller");
 
-const {
-    getAllAttendance,
-    getMyAttendance,
-    createAttendance,
-    updateAttendance,
-    deleteAttendance,
-} = require("../controllers/attendance.controller");
+const attendanceController = require("../controllers/attendance.controller");
 
 const {
     getAllAnnouncements,
@@ -55,11 +49,18 @@ router.get("/users/userDetails/:id", userDetails);
 router.put("/users/profile/:id", upload.single("media"), fileValidation, updateProfile);
 
 // Attendance Management
-router.get("/all_attendance", getAllAttendance);
-// router.get('/attendance', getMyAttendance);
-router.post("/attendance", createAttendance);
-router.put("/attendance/:id", updateAttendance);
-router.delete("/attendance/:id", deleteAttendance);
+// router.get("/all_attendance", getAllAttendance);
+// // router.get('/attendance', getMyAttendance);
+// router.post("/attendance", createAttendance);
+// router.put("/attendance/:id", updateAttendance);
+// router.delete("/attendance/:id", deleteAttendance);
+
+// Punch In/Out Routes
+router.post('/attendance/punch-in', attendanceController.punchIn);
+router.post('/attendance/punch-out', attendanceController.punchOut);
+// Attendance Data Routes
+router.get('/attendance/today/:employeeId', attendanceController.getTodayAttendance);
+router.get('/attendance/records/:employeeId', attendanceController.getAttendanceRecords);
 
 // Feed Management
 router.get("/feeds", getAllFeeds);

@@ -9,7 +9,7 @@ const authMiddleware = async (req, res, next) => {
             message: "Authentication failed! No token provided."
         })
     };
-    console.log("🎟️ JWT_Token: ", token);
+    // console.log("🎟️ JWT_Token: ", token);
 
     try {
         const decoded = verifyToken(token);

@@ -269,59 +269,70 @@ exports.userDetails = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
     try {
-      const userExist = await User.findById(req.user._id).select("-password -secretKey");
-      if (!userExist) {
-        return res.status(400).json({ message: "User doesn't exist!" });
-      }
-  
-      const { text } = req.body;
-  
-      // ✅ Update bio if provided
-      if (text) {
-        userExist.bio = String(text);
-      }
-  
-      // ✅ Handle new profile image (if uploaded)
-      if (req.file) {
-        // 🔄 Delete old image from Cloudinary
-        if (userExist.public_id) {
-          try {
-            await cloudinary.uploader.destroy(userExist.public_id);
-          } catch (cloudErr) {
-            console.error("Cloudinary delete error:", cloudErr.message);
-          }
+        const userExist = await User.findById(req.user._id).select("-password -secretKey");
+        if (!userExist) {
+            return res.status(400).json({ message: "User doesn't exist!" });
         }
-  
-        // ☁ Upload new image
-        const uploaded = await cloudinary.uploader.upload(req.file.path, {
-          folder: "SaturnX_Management_System/Profiles",
-          public_id: `profile_${Date.now()}`,
-          resource_type: "auto",
+
+        const { text } = req.body;
+
+        // ✅ Update bio if provided
+        if (text) {
+            userExist.bio = String(text);
+        }
+
+        // ✅ Handle new profile image (if uploaded)
+        if (req.file) {
+            // 🔄 Delete old image from Cloudinary
+            if (userExist.public_id) {
+                try {
+                    await cloudinary.uploader.destroy(userExist.public_id);
+                } catch (cloudErr) {
+                    console.error("Cloudinary delete error:", cloudErr.message);
+                }
+            }
+
+            // ☁ Upload new image
+            const uploaded = await cloudinary.uploader.upload(req.file.path, {
+                folder: "SaturnX_Management_System/Profiles",
+                public_id: `profile_${Date.now()}`,
+                resource_type: "auto",
+            });
+
+            userExist.profilePic = uploaded.secure_url;
+            userExist.public_id = uploaded.public_id;
+
+            userExist.profilePic.push({
+                url: uploaded.secure_url,
+                public_id: uploaded.public_id,
+                uploadedAt: new Date()
+              });
+        }
+
+        // ✅ Ensure required fields still exist
+        userExist.department = userExist.department || "Unknown";
+        userExist.feeds = userExist.feeds || [];
+
+        await userExist.save();
+
+        console.log("Profile updated:", {
+            userId: req.user._id,
+            bio: userExist.bio,
+            profilePic: userExist.profilePic,
         });
-  
-        userExist.profilePic = uploaded.secure_url;
-        userExist.public_id = uploaded.public_id;
-      }
-  
-      await userExist.save();
-  
-      console.log("Profile updated:", {
-        userId: req.user._id,
-        bio: userExist.bio,
-        profilePic: userExist.profilePic,
-      });
-  
-      res.status(201).json({
-        message: "Profile Updated Successfully!",
-      });
-  
+
+        return res.status(201).json({
+            message: "Profile Updated Successfully!",
+            profilePic: userExist.profilePic,
+        });
+
     } catch (error) {
-      console.error("Update profile error:", error);
-      res.status(400).json({
-        message: "Error in updateProfile!",
-        error: error.message,
-      });
+        console.error("Update profile error:", error);
+        res.status(400).json({
+            message: "Error in updateProfile!",
+            error: error.message,
+        });
     }
-  };
-  
+};
+
 

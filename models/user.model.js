@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
     phone: {
         type: Number,
     },
-    department: { type: String, required: true },
+    department: { type: String},
     birthday: { type: Date },
     status: {
         type: String,
@@ -49,12 +49,12 @@ const userSchema = new mongoose.Schema({
     ],
     profilePic: {
         type: String,
-        default: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+        
     },
-    feeds: {
-        type: mongoose.Schema.ObjectId,
+    feeds: [{
+        type: mongoose.Schema.Types.ObjectId,
         ref: "Feed"
-    },
+    }],
     secretKey: {
         type: String,
         required: function () { return this.role === "admin" || this.role === "manager"; }

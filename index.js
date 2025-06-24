@@ -31,7 +31,7 @@ app.get("/", (req, res) => {
 });
 
 
-app.use("/api", verifyRoute);
+// app.use("/api", verifyRoute);
 
 //  Routes
 const authRouter = require("./routers/auth.router");
