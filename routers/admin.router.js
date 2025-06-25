@@ -15,6 +15,13 @@ const {
 const attendanceController = require("../controllers/attendance.controller");
 
 const {
+    getAllLeaves,
+    createLeave,
+    updateLeave,
+    deleteLeave,
+  } = require("../controllers/leave.controllers");
+
+const {
     getAllAnnouncements,
     createAnnouncement,
     deleteAnnouncement,
@@ -61,6 +68,12 @@ router.post('/attendance/punch-out', attendanceController.punchOut);
 // Attendance Data Routes
 router.get('/attendance/today/:employeeId', attendanceController.getTodayAttendance);
 router.get('/attendance/records/:employeeId', attendanceController.getAttendanceRecords);
+
+// Leave Management
+router.get("/leaves", getAllLeaves);
+router.post("/leave", createLeave);
+router.put("/leave/:id", updateLeave);
+router.delete("/leave/:id", deleteLeave);
 
 // Feed Management
 router.get("/feeds", getAllFeeds);

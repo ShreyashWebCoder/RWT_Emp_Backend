@@ -1,10 +1,13 @@
 const mongoose = require("mongoose");
 
-const leaveRequestSchema = new mongoose.Schema({
-    employee: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
+const leaveSchema = new mongoose.Schema({
+    employeeName: {
+        type: String,
+        required: true
+    },
+    leaveType: {
+        type: String,
+        required: true
     },
     startDate: {
         type: Date,
@@ -26,4 +29,4 @@ const leaveRequestSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model("LeaveRequest", leaveRequestSchema);
+module.exports = mongoose.model("Leave", leaveSchema);
