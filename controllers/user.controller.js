@@ -302,16 +302,23 @@ exports.updateProfile = async (req, res) => {
             userExist.profilePic = uploaded.secure_url;
             userExist.public_id = uploaded.public_id;
 
-            userExist.profilePic.push({
-                url: uploaded.secure_url,
-                public_id: uploaded.public_id,
-                uploadedAt: new Date()
-              });
+            // ✅ Ensure profilePic is an array
+            // if (!Array.isArray(userExist.profilePic)) {
+            //     userExist.profilePic = [];
+            // }
+
+            // 🔄 Push the new image
+            // userExist.profilePic.push({
+            //     url: uploaded.secure_url,
+            //     public_id: uploaded.public_id,
+            //     uploadedAt: new Date()
+            // });
+
         }
 
         // ✅ Ensure required fields still exist
-        userExist.department = userExist.department || "Unknown";
-        userExist.feeds = userExist.feeds || [];
+        // userExist.department = userExist.department || "Unknown";
+        // userExist.feeds = userExist.feeds || [];
 
         await userExist.save();
 

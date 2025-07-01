@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
     phone: {
         type: Number,
     },
-    department: { type: String},
+    department: { type: String },
     birthday: { type: Date },
     status: {
         type: String,
@@ -49,8 +49,9 @@ const userSchema = new mongoose.Schema({
     ],
     profilePic: {
         type: String,
-        
-    },
+        default: ""
+    }
+    ,
     feeds: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Feed"
