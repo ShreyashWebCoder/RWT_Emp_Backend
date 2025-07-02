@@ -274,12 +274,12 @@ exports.updateProfile = async (req, res) => {
             return res.status(400).json({ message: "User doesn't exist!" });
         }
 
-        const { text } = req.body;
+        // const { text } = req.body;
 
-        // ✅ Update bio if provided
-        if (text) {
-            userExist.bio = String(text);
-        }
+        // // ✅ Update bio if provided
+        // if (text) {
+        //     userExist.bio = String(text);
+        // }
 
         // ✅ Handle new profile image (if uploaded)
         if (req.file) {
