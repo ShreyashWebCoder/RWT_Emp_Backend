@@ -86,9 +86,6 @@
 
 const Leave = require("../models/leave.model");
 
-// @desc    Get all leaves (filtered by role)
-// @route   GET /api/leaves
-// @access  Private
 exports.getAllLeaves = async (req, res) => {
   try {
     let query = {};
@@ -121,28 +118,27 @@ exports.getAllLeaves = async (req, res) => {
   }
 };
 
-// @desc    Create a new leave
-// @route   POST /api/leaves
-// @access  Private
 exports.createLeave = async (req, res) => {
   try {
-    let { employeeName, leaveType, startDate, endDate, reason, status } = req.body;
+    let { employeeName, employeeId, isManualEntry, leaveType, startDate, endDate, reason, status } = req.body;
 
-    // For employees, force the employeeName to be their own name
+    // For employees, force their own name
     if (req.user.role === 'employee') {
       employeeName = req.user.name;
-      status = 'pending'; // Employees can't set status
+      employeeId = req.user._id;
+      isManualEntry = false;
+      status = 'pending';
     }
 
-    // Basic validation
-    if (!employeeName || !leaveType || !startDate || !endDate || !reason) {
+    // For admin/manager, validate manual entries
+    if ((req.user.role === 'admin' || req.user.role === 'manager') && !isManualEntry && !employeeId) {
       return res.status(400).json({
         success: false,
-        message: "All required fields must be provided.",
+        message: "Please select an employee or mark as manual entry"
       });
     }
 
-    // Format dates to "dd-mm-yyyy"
+    // Format dates
     const formatDate = (dateStr) => {
       const date = new Date(dateStr);
       const day = String(date.getDate()).padStart(2, "0");
@@ -153,18 +149,18 @@ exports.createLeave = async (req, res) => {
 
     const newLeave = new Leave({
       employeeName,
+      employeeId: isManualEntry ? null : employeeId,
+      isManualEntry,
       leaveType,
       startDate: formatDate(startDate),
       endDate: formatDate(endDate),
       reason,
       status: status || "pending",
+      approvedBy: status === 'approved' ? req.user._id : undefined
     });
 
     const savedLeave = await newLeave.save();
-    return res.status(201).json({ 
-      success: true, 
-      data: savedLeave 
-    });
+    return res.status(201).json({ success: true, data: savedLeave });
   } catch (error) {
     console.error("Error creating leave:", error.message);
     return res.status(400).json({ 
