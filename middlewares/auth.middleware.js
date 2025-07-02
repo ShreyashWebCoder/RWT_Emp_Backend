@@ -15,22 +15,29 @@ const authMiddleware = async (req, res, next) => {
         const decoded = verifyToken(token);
         if (!decoded) {
             return res.status(401).json({
-                message: "Authentication failed! Invalid decoded token."
+                message: "Invalid decoded token."
             })
         }
+
 
         const user = await User.findById(decoded.userId);
         if (!user) {
             return res.status(401).json({
-                message: "Authentication failed! User not found."
+                message: " User not found."
             })
         }
 
         req.user = user;
         next();
 
+
     } catch (err) {
-        res.status(400).json({ message: 'Invalid token' });
+        // res.status(400).json({ message: 'Invalid token' });
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token expired' });
+        }
+        return res.status(400).json({ message: 'Invalid token' });
+
     }
 };
 

@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema({
     ],
     profilePic: {
         type: String,
-        default: ""
+        default: "https://www.pngmart.com/files/23/Profile-PNG-Pic.png"
     }
     ,
     feeds: [{

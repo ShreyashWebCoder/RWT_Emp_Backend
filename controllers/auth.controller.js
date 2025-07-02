@@ -113,12 +113,12 @@ const login = async (req, res) => {
 
         const role = userExist.role;
         res.cookie("token", token, {
-            maxAge: 1000 * 60 * 60 * 24 * 7,
+            maxAge: 24 * 60 * 60 * 1000,
             httpOnly: true,
             secure: false,
             sameSite: "none"
         }).cookie("role", role, {
-            maxAge: 1000 * 60 * 60 * 24 * 7,
+            maxAge: 24 * 60 * 60 * 1000,
             httpOnly: true,
             secure: false,
             sameSite: "none"
