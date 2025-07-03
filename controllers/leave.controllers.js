@@ -171,9 +171,6 @@ exports.createLeave = async (req, res) => {
   }
 };
 
-// @desc    Update a leave
-// @route   PUT /api/leaves/:id
-// @access  Private (Admin/Manager only for status changes)
 exports.updateLeave = async (req, res) => {
   try {
     const leave = await Leave.findById(req.params.id);
@@ -240,9 +237,7 @@ exports.updateLeave = async (req, res) => {
   }
 };
 
-// @desc    Delete a leave
-// @route   DELETE /api/leaves/:id
-// @access  Private (Admin/Manager or leave owner)
+
 exports.deleteLeave = async (req, res) => {
   try {
     const leave = await Leave.findById(req.params.id);
