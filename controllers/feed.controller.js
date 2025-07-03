@@ -79,50 +79,143 @@ const { post } = require("../routers/admin.router");
 //     }
 // };
 
+// exports.createFeed = async (req, res) => {
+//     try {
+//         const { title, content } = req.body;
+
+//         // Validate required fields
+//         if (!title || !content) {
+//             return res.status(400).json({ message: "Title and content are required" });
+//         }
+
+//         // Initialize feed object
+//         const feed = new Feed({
+//             title: String(title),
+//             content: String(content),
+//             author: req.user._id,
+//         });
+
+//         // Handle image upload (if present)
+//         if (req.file) {
+//             const uploaded = await cloudinary.uploader.upload(req.file.path, {
+//                 folder: "SaturnX_Management_System/Feeds",
+//                 resource_type: "auto"
+//             });
+
+//             feed.media = {
+//                 url: uploaded.secure_url,
+//                 public_id: uploaded.public_id,
+//                 type: req.file.mimetype,
+//             };
+//         }
+
+//         const savedFeed = await feed.save();
+//         res.status(201).json({
+//             message: "Feed created successfully",
+//             post: savedFeed,
+//         });
+
+//     } catch (error) {
+//         console.error("Error creating feed:", error);
+//         res.status(500).json({
+//             message: "Internal server error",
+//             error: error.message,
+//         });
+//     }
+// };
+
 exports.createFeed = async (req, res) => {
     try {
         const { title, content } = req.body;
 
         // Validate required fields
         if (!title || !content) {
-            return res.status(400).json({ message: "Title and content are required" });
+            return res.status(400).json({ 
+                success: false,
+                message: "Title and content are required",
+                error: "ValidationError" 
+            });
         }
 
         // Initialize feed object
         const feed = new Feed({
-            title: String(title),
-            content: String(content),
+            title: String(title).trim(),
+            content: String(content).trim(),
             author: req.user._id,
         });
 
-        // Handle image upload (if present)
+        // Handle file upload (if present)
         if (req.file) {
-            const uploaded = await cloudinary.uploader.upload(req.file.path, {
-                folder: "SaturnX_Management_System/Feeds",
-                resource_type: "auto"
-            });
+            try {
+                // Validate file size and type again (redundant but safe)
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'];
+                if (!validTypes.includes(req.file.mimetype)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Invalid file type. Only images (JPEG, PNG, GIF) and MP4 videos are allowed',
+                        error: "InvalidFileType"
+                    });
+                }
 
-            feed.media = {
-                url: uploaded.secure_url,
-                public_id: uploaded.public_id,
-                type: req.file.mimetype,
-            };
+                // Upload to Cloudinary
+                const uploaded = await cloudinary.uploader.upload(req.file.path, {
+                    folder: "SaturnX_Management_System/Feeds",
+                    resource_type: "auto",
+                    quality: "auto:good" // Optimize quality
+                });
+
+                feed.media = {
+                    url: uploaded.secure_url,
+                    public_id: uploaded.public_id,
+                    type: req.file.mimetype,
+                    width: uploaded.width,
+                    height: uploaded.height,
+                    duration: uploaded.duration // For videos
+                };
+            } catch (uploadError) {
+                console.error("Cloudinary upload error:", uploadError);
+                return res.status(500).json({
+                    success: false,
+                    message: "Failed to upload media",
+                    error: "MediaUploadError"
+                });
+            }
         }
 
+        // Save the feed and populate author details
         const savedFeed = await feed.save();
+        const populatedFeed = await Feed.findById(savedFeed._id)
+            .populate("author", "name email avatar role");
+
         res.status(201).json({
+            success: true,
             message: "Feed created successfully",
-            post: savedFeed,
+            data: {
+                ...populatedFeed.toObject(),
+                // Add any additional transformations here
+            }
         });
 
     } catch (error) {
         console.error("Error creating feed:", error);
-        res.status(500).json({
-            message: "Internal server error",
-            error: error.message,
+        
+        // Handle specific errors
+        let statusCode = 500;
+        let errorMessage = "Internal server error";
+        
+        if (error.name === "ValidationError") {
+            statusCode = 400;
+            errorMessage = "Validation failed";
+        }
+
+        res.status(statusCode).json({
+            success: false,
+            message: errorMessage,
+            error: process.env.NODE_ENV === "development" ? error.message : undefined
         });
     }
 };
+
 
 // Get All Feeds
 exports.getAllFeeds = async (req, res) => {
