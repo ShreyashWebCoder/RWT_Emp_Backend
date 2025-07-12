@@ -32,6 +32,9 @@ const authMiddleware = async (req, res, next) => {
 
 
     } catch (err) {
+        console.error("❌ JWT Error: ", err.message);
+
+        res.clearCookie("token");
         // res.status(400).json({ message: 'Invalid token' });
         if (err.name === 'TokenExpiredError') {
             return res.status(401).json({ message: 'Token expired' });
