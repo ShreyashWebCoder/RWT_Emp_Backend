@@ -41,7 +41,7 @@ app.use("/auth", authRouter);
 app.use("/api", apiRouter);
 
 //  Server Start
-app.listen(process.env.PORT, () => {
+app.listen(process.env.PORT || 8000, () => {
   connectDB();
   console.log(`Server is ruuning up ! PORT : ${process.env.PORT}`);
 });
