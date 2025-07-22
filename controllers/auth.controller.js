@@ -9,13 +9,13 @@ const register = async (req, res) => {
             status, secretKey, department } = req.body;
 
         if (!name || !email || !password || !role || !phone) {
-            res.status(400).json({ message: "All fields are required!" });
+            return res.status(400).json({ message: "All fields are required!" });
 
         }
 
         const userExist = await User.findOne({ email });
         if (userExist) {
-            res.status(400).json({ message: "User already registered! Please Login." });
+            return res.status(400).json({ message: "User already registered! Please Login." });
 
         }
 
@@ -24,7 +24,7 @@ const register = async (req, res) => {
         // Role-based Secret Key Validation (Only for Admin & Manager)
         if (role === "admin" || role === "manager") {
             if (!secretKey) {
-                res.status(400).json({ message: "Secret Key is required for Admin & Manager!" });
+                return res.status(400).json({ message: "Secret Key is required for Admin & Manager!" });
 
             }
 
@@ -32,13 +32,13 @@ const register = async (req, res) => {
                 role === "admin" ? process.env.ADMIN_SECRET_KEY : process.env.MANAGER_SECRET_KEY;
 
             if (secretKey !== validSecretKey) {
-                res.status(403).json({ message: `Invalid ${role} Secret Key!` });
+                return res.status(403).json({ message: `Invalid ${role} Secret Key!` });
 
             }
 
             hashedSecretKey = await bcrypt.hash(secretKey, 10);
             if (!hashedSecretKey) {
-                res.status(400).json({ message: "Secret Key hashing failed!" });
+                return res.status(400).json({ message: "Secret Key hashing failed!" });
             }
         }
 
@@ -64,7 +64,6 @@ const register = async (req, res) => {
         // const token = generateToken(user._id, user.role);
         // res.status(201).json({ user, token });
 
-
         return res.status(201).json({
             success: true,
             message: `Registered ${newUser.role} Successfully! Welcome ${newUser.name}`,
@@ -74,7 +73,7 @@ const register = async (req, res) => {
     } catch (err) {
         console.log(err);
 
-        res.status(400).json({
+        return res.status(400).json({
             success: false,
             message: 'Registration failed', error: err.message
         });
