@@ -31,8 +31,8 @@ const userSchema = new mongoose.Schema({
     birthday: { type: Date },
     status: {
         type: String,
-        enum: ["active", "inactive",],
-        default: "active"
+        enum: ["offline", "online",],
+        default: "offline"
     },
 
     bio: {

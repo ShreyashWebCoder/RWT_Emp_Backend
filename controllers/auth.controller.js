@@ -5,7 +5,8 @@ const { generateToken } = require('../config/jwt');
 
 const register = async (req, res) => {
     try {
-        const { name, email, password, role, phone, secretKey } = req.body;
+        const { name, email, password, role, phone, birthday,
+            status, secretKey, department } = req.body;
 
         if (!name || !email || !password || !role || !phone) {
             res.status(400).json({ message: "All fields are required!" });
@@ -48,7 +49,11 @@ const register = async (req, res) => {
             password,
             role,
             phone,
+            birthday,
+            department,
+            status,
             secretKey: hashedSecretKey
+
         });
 
         const newUser = await user.save();
