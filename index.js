@@ -35,14 +35,10 @@ app.get("/", (req, res) => {
 
 //  Routes
 const authRouter = require("./routers/auth.router");
-const adminRouter = require("./routers/admin.router");
-// const managerRouter = require('./routes/manager.router');
-// const employeeRouter = require('./routes/employee.router');
+const apiRouter = require("./routers/api.router");
 
 app.use("/auth", authRouter);
-app.use("/admin", adminRouter);
-app.use("/manager", adminRouter);
-// app.use("/employee", employeeRouter);
+app.use("/api", apiRouter);
 
 //  Server Start
 app.listen(process.env.PORT, () => {

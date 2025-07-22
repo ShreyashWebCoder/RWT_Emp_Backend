@@ -3,7 +3,7 @@ const Feed = require("../models/feed.model");
 
 const formidable = require("formidable");
 const cloudinary = require("../config/cloudinary");
-const { post } = require("../routers/admin.router");
+const { post } = require("../routers/api.router");
 
 
 // Create New Feed
