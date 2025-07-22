@@ -40,8 +40,9 @@ const apiRouter = require("./routers/api.router");
 app.use("/auth", authRouter);
 app.use("/api", apiRouter);
 
+const PORT = process.env.PORT || 8000;
 //  Server Start
-app.listen(process.env.PORT || 8000, () => {
+app.listen(PORT, '0.0.0.0', () => {
   connectDB();
-  console.log(`Server is ruuning up ! PORT : ${process.env.PORT}`);
+  console.log(`Server is ruuning up ! PORT : ${PORT}`);
 });
