@@ -13,7 +13,7 @@ const app = express();
 
 //  CORS
 const corsOptions = {
-  origin: "*",
+  origin: "https://saturnx-tracker.netlify.app",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
 };
